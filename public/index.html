@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ISS Satellite</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+      integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
+      crossorigin=""
+    />
+    <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script
+      src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+      integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
+      crossorigin=""
+    ></script>
+
+    <style>
+      #map {
+        height: 300px;
+        width: 800px;
+        border: 1px solid black;
+        align-self: center;
+      }
+      #bbb {
+        display: flex;
+        justify-content: center;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Location</h1>
+    <label for="">Latitude</label>
+    <h2 id="latitude"></h2>
+    <label for="">Longitude</label>
+    <h2 id="longitude"></h2>
+    <div id="bbb">
+      <div id="map"></div>
+    </div>
+  </body>
+
+  <script>
+    const url = "https://api.wheretheiss.at/v1/satellites/25544";
+    const map = L.map("map");
+    const marker = L.marker([0, 0]).addTo(map);
+
+    async function getData() {
+      const response = await fetch(url);
+      const data = await response.json();
+
+      console.log(data);
+
+      const latitude = data.latitude;
+      const longitude = data.longitude;
+      const timestamp = data.timestamp;
+      return [latitude, longitude, timestamp];
+    }
+
+    let flag = true;
+
+    async function initMap() {
+      const data = await getData();
+      document.getElementById("latitude").innerHTML = data[0];
+
+      document.getElementById("longitude").innerHTML = data[1];
+
+      // send object data to backend
+      fetch("http://127.0.0.1:3000/api", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (flag) {
+        map.setView(data, 2);
+        flag = false;
+      }
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(map);
+
+      marker.setLatLng(data);
+    }
+
+    initMap();
+    setInterval(initMap, 5000);
+  </script>
+</html>
